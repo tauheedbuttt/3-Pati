@@ -1,5 +1,7 @@
 backside_src = "images/cards/backside.png"
 game_end = false;
+temp_lol = []
+sessionStorage.setItem("player_moves", JSON.stringify(temp_lol))
 
 
 
@@ -288,6 +290,7 @@ async function user_satti_move(card){
         temp = card1.className
         card1.className = card2.className
         card2.className = temp
+
        
         // add them into opposite hands
         document.getElementById(id1).appendChild(card2)
@@ -297,8 +300,8 @@ async function user_satti_move(card){
         card1.style.boxShadow="0 0 20px 2px rgb(230, 255, 2)"
         card2.style.boxShadow="0 0 20px 2px rgb(230, 255, 2)"
         await sleep(700)
-        card1.style.boxShadow="none"
-        card2.style.boxShadow="none"
+        card1.style.boxShadow=null
+        card2.style.boxShadow=null
 
         // make all cards unclickable and update storage
         // get number of players
@@ -317,8 +320,8 @@ async function user_satti_move(card){
         // make swapped cards unkown at both ends
         unkown_players(card1.id, card2.id) 
 
-        console.log("-----------------------Player 1 MOVE-----------------------")
-        console.log(JSON.parse(sessionStorage.getItem("players_data")))
+        // console.log("-----------------------Player 1 MOVE-----------------------")
+        // console.log(JSON.parse(sessionStorage.getItem("players_data")))
 
         // now let opponents make their move
         make_opponents_move();
@@ -360,8 +363,8 @@ function put_on_dealt(){
         special_Card_thrown=true;
     }
     
-    console.log("-----------------------Player 1 MOVE-----------------------")
-    console.log(JSON.parse(sessionStorage.getItem("players_data")))
+    // console.log("-----------------------Player 1 MOVE-----------------------")
+    // console.log(JSON.parse(sessionStorage.getItem("players_data")))
     document.getElementById("dealt").style.pointerEvents="none"
     //check if game finished
     deck = document.getElementsByClassName("cards backside deck")
@@ -380,6 +383,7 @@ function remove_from_current(card){
 }
 
 function remove_from_hand(card){
+
     document.getElementById("dealt").style.pointerEvents="none"
     card_id = (card.id)
     p1Cards = document.getElementsByClassName("cards player1Cards");
@@ -401,7 +405,7 @@ function remove_from_hand(card){
         card.style.boxShadow = "0 0 40px 8px rgba(65, 65, 65, 0.247)"
     }
     else{
-        card.style.boxShadow = "none"
+        card.style.boxShadow = null
     }
     
     //put the card on availble space
@@ -448,9 +452,21 @@ function remove_from_hand(card){
         special_Card_thrown = true;
     }
 
-    console.log("-----------------------Player 1 MOVE-----------------------")
-    console.log(JSON.parse(sessionStorage.getItem("players_data")))
-
+    
+    // store our move
+    my_move = {
+        player: 1,
+        where: card_loc,
+        what: card_id
+    }
+    moves = JSON.parse(window.sessionStorage.getItem("player_moves"));
+    moves.push(my_move)
+    sessionStorage.setItem("player_moves", JSON.stringify(moves))
+    
+    // console.log("-----------------------Player 1 MOVE-----------------------")
+    // console.log(JSON.parse(sessionStorage.getItem("players_data")))
+    // console.log(JSON.parse(window.sessionStorage.getItem("player_moves")))
+    
     //check if game finished
     deck = document.getElementsByClassName("cards backside deck")
     if(deck.length == 0){
@@ -483,9 +499,21 @@ function send_current_status(n, p_data, av_card){
 }
 
 function send_satti_status(n, p_data){
+    moves = JSON.parse(window.sessionStorage.getItem("player_moves"));
+    moves_to_send = []
+    // remove self_move
+    for(let m=moves.length-1 ;  m>=0 ; m--){
+
+        if(moves[m].player != n)
+            moves_to_send.push(moves[m])
+
+        if (moves_to_send.length == p_data.length-1)
+            break
+    }
     obj = {
         players: p_data,
         player_num: n,
+        info: moves_to_send
     };
     const data = JSON.stringify(obj);
     $.post( "http://127.0.0.1:5500/sattimethod", {
@@ -514,21 +542,27 @@ async function pc_satti_move(j, players){
 
     var card1 = card_from_board_matrix(move);
     var card2 = card_from_board_matrix(player_card);
-
-    console.log("---------------------------------------------------")
-    
-    // change classses
-    var temp = card1.className
     if (card2.className == "cards player1Cards"){
         // if replaced with user
         card2.removeAttribute("onclick")
+        card1.removeAttribute("onclick")
         card1.setAttribute("onclick","remove_from_hand(this)")
     }
+
+    // console.log("---------------------------------------------------")
+    
+    // change classses
+    var temp = card1.className
     card1.className = card2.className
     card2.className = temp
+    
+    // change styles
+    var temp2 = card1.style
+    card1.style = card2.style
+    card2.style = temp2
 
-    console.log(card1.id)
-    console.log(card2.id)
+    // console.log(card1.id)
+    // console.log(card2.id)
     
     //change their locations
     document.getElementById(""+move).appendChild(card2)
@@ -538,8 +572,8 @@ async function pc_satti_move(j, players){
     card1.style.boxShadow="0 0 20px 2px rgb(230, 255, 2)"
     card2.style.boxShadow="0 0 20px 2px rgb(230, 255, 2)"
     await sleep(700)
-    card1.style.boxShadow="none"
-    card2.style.boxShadow="none"
+    card1.style.boxShadow=null
+    card2.style.boxShadow=null
 
     // update players storage
     locations = [
@@ -622,7 +656,7 @@ async function make_opponents_move(){
             opponent_card.className = "cards frontside dealt";
             opponent_card.src = card_source;
             opponent_card.style.pointerEvents="none"
-            opponent_card.style.boxShadow = "none"
+            opponent_card.style.boxShadow = null
             // put on table
             dealt_area.appendChild(opponent_card)
             // await sleep(800);
@@ -637,13 +671,23 @@ async function make_opponents_move(){
             document.getElementById(""+card_loc).appendChild(currentCard);
             currentCard.style.boxShadow = "0 0 20px 2px rgb(230, 255, 2)"
             await sleep(800)
-            currentCard.style.boxShadow = "none"
+            currentCard.style.boxShadow = null
             players[j-1][move] = currentCard.id;
+
+            // store our move
+            my_move = {
+                player: j,
+                where: move,
+                what: opponent_move
+            }
+            moves = JSON.parse(window.sessionStorage.getItem("player_moves"));
+            moves.push(my_move)
+            sessionStorage.setItem("player_moves", JSON.stringify(moves))
             
             sessionStorage.setItem("players_data", JSON.stringify(players));
             // see if 7satti is thrown
             if (opponent_card.id.split("_")[0] == "7"){
-                console.log(JSON.parse(sessionStorage.getItem("players_data")))
+                // console.log(JSON.parse(sessionStorage.getItem("players_data")))
                 await pc_satti_move(j, players)
                 players = JSON.parse(sessionStorage.getItem("players_data"))
             }
@@ -654,14 +698,14 @@ async function make_opponents_move(){
             
             card2.style.boxShadow = "0 0 20px 2px rgb(230, 255, 2)"
             await sleep(1000)
-            card2.style.boxShadow = "none"
+            card2.style.boxShadow = null
             
             // change attributes for new location
             card_source = "images/cards/"+card2.id+".png";
             card2.className = "cards frontside dealt";
             card2.src = card_source;
             card2.style.pointerEvents="none"
-            card2.style.boxShadow = "none"
+            card2.style.boxShadow = null
             // put on table
             dealt_area.appendChild(card2)
             
@@ -669,16 +713,17 @@ async function make_opponents_move(){
             sessionStorage.setItem("players_data", JSON.stringify(players));
             if (card2.id.split("_")[0] == "7"){
                 
-                console.log(JSON.parse(sessionStorage.getItem("players_data")))
+                // console.log(JSON.parse(sessionStorage.getItem("players_data")))
                 await pc_satti_move(j, players)
                 players = JSON.parse(sessionStorage.getItem("players_data"))
             }
         }
         
-        document.getElementById(huh).style.boxShadow="none"
+        document.getElementById(huh).style.boxShadow=null
         
-        console.log("-----------------------Player "+j+" MOVE-----------------------")
-        console.log(players)
+        // console.log("-----------------------Player "+j+" MOVE-----------------------")
+        // console.log(players)
+        // console.log(JSON.parse(window.sessionStorage.getItem("player_moves")))
 
         deck = document.getElementsByClassName("cards backside deck")
         if(deck.length == 0){
@@ -731,10 +776,10 @@ function add_shadow_to_winners(player){
 
 async function show_winner(){
     upd_players();
-    console.log("FINAL STORAGE")
+    // console.log("FINAL STORAGE")
     var total_players = parseInt(sessionStorage.getItem("players"));
     players = JSON.parse(sessionStorage.getItem("players_data"));
-    console.log(players)
+    // console.log(players)
     player_names = ["Player 1", "Player 2", "Player 3", "Player 4"]
     hands = []
     scores = [];
@@ -767,7 +812,7 @@ async function show_winner(){
         }
         await sleep(800)
     }
-    console.log(win_score)
+    // console.log(win_score)
     show_result(total_players, win_score, scores, player_names)
 }
 
@@ -803,7 +848,7 @@ function show_result(total_players, win_score, scores, player_names){
         if(k >= total_players){
             btn.remove()
         }
-        console.log(score)
+        // console.log(score)
         btn.innerHTML = player_names[k]+": "+scores[k]
         if (scores[k]==win_score)
             btn.style.backgroundColor = "green"
