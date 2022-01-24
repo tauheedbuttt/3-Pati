@@ -3,6 +3,7 @@ import json
 from flask import Flask
 from flask import request
 from flask_cors import CORS
+import math
 
 app = Flask(__name__)
 CORS(app)
@@ -48,33 +49,78 @@ def score(card):
     else:
         return 0
 
-def space_for_avail_card(hand, avail_card):
-    # find card with biggest score
-    max = hand[0]
-    for card in hand:
-        if (score(card) > score(max)):
-            max = card
-    # if card with biggest score is less than available card, then no need to put in hand
-    if score(max) < score(avail_card):
-        return -1
-    return hand.index(max)
-
-# Gives Next move for PC based on current situation
 def generate_next_move(player_num, avail_card, players):
     global move
     global location
 
     hand = players[player_num]
-    # see if available card is eligible to be in hand
-    space = space_for_avail_card(hand, avail_card)
-    print(hand)
+    hand_scores = [score(card) for card in hand]
+    avail_score = score(avail_card)
 
-    if space == -1:
-        move = -1
-        location = 0
+    # get the card with which you wish to exhcange
+    move = hand_scores.index(max(hand_scores))
+
+    if (avail_score > max(hand_scores)):
+        # if avail card bigger than our maximum, dont bother changing
+        location = -1
     else:
-        move = space
         location = 1
+
+# -----------------------------MinMax AI Algorithm------------------------------
+def minimax(curDepth, nodeIndex, maxTurn, scores, targetDepth):
+ 
+    # base case : targetDepth reached
+    if (curDepth == targetDepth):
+        return scores[nodeIndex]
+     
+    if (maxTurn):
+        return max(minimax(curDepth + 1, nodeIndex * 2, False, scores, targetDepth),
+                   minimax(curDepth + 1, nodeIndex * 2 + 1, False, scores, targetDepth))
+     
+    else:
+        return min(minimax(curDepth + 1, nodeIndex * 2, True, scores, targetDepth),
+                   minimax(curDepth + 1, nodeIndex * 2 + 1, True, scores, targetDepth))
+def maxmini(curDepth, nodeIndex, maxTurn, scores, targetDepth):
+ 
+    # base case : targetDepth reached
+    if (curDepth == targetDepth):
+        return scores[nodeIndex]
+     
+    if (maxTurn):
+        return max(maxmini(curDepth + 1, nodeIndex * 2, False, scores, targetDepth),
+                   maxmini(curDepth + 1, nodeIndex * 2 + 1, False, scores, targetDepth))
+     
+    else:
+        return min(maxmini(curDepth + 1, nodeIndex * 2, True, scores, targetDepth),
+                   maxmini(curDepth + 1, nodeIndex * 2 + 1, True, scores, targetDepth))
+
+# -----------------------------NEXT MOVE BASED ON AI SUGGESTIOn ------------------------
+def ai_next_move(player_num, avail_card, players):
+    global move
+    global location
+
+    hand = players[player_num]
+    hand_scores = [score(card) for card in hand]
+    avail_score = score(avail_card)
+
+    min_max_arr = hand_scores + [avail_score]
+    treeDepth = math.log(len(min_max_arr), 2)
+
+    suggested_card = minimax(0, 0, True, min_max_arr, treeDepth)
+
+    print(f"Hand Scores: {hand_scores}")
+    print(f"Available Scores: {avail_score}")
+    print(f"Scores: {min_max_arr}")
+
+    if suggested_card == avail_score:
+        # if the suggested card is the same as the card lifted, put it back
+        location = -1
+    else:
+        # else replace with the card having highest score
+        largest = max(hand_scores)
+        move = hand_scores.index(largest)
+        location = 1
+
 
 def generate_satti_move(player_num, players):
     global satti_move
@@ -85,7 +131,6 @@ def generate_satti_move(player_num, players):
     for card in hand:
         if (score(card) > score(max)):
             max = card
-    print(f"Player {player_num+1}")
     locations = [
         [0,1,2],
         [3,4,5],
@@ -98,12 +143,73 @@ def generate_satti_move(player_num, players):
     satti_player = random.choice(arr)
     satti_player_card = locations[satti_player][random.choice([0,1,2])]
 
+
+# ----------------------------GET SATTI MOVE FROM AI -------------------------------
+def ai_satti_next_move(player_num, info, players):
+    global satti_move
+    global satti_player_card
+
+    hand = players[player_num]
+    hand_scores = [score(card) for card in hand]
+    candidate = max(hand_scores)
+
+    candidate_found = False
+
+    locations = [
+        [0,1,2],
+        [3,4,5],
+        [6,7,8],
+        [9,10,11]
+    ]
+    satti_move = locations[player_num][hand_scores.index(candidate)]
+
+    # if dont know previous moves, return random value
+    if len(info)==0:
+        arr = [i for i in range(0,len(players)) if i != (player_num)]
+        satti_player = random.choice(arr)
+        satti_player_card = locations[satti_player][random.choice([0,1,2])]
+        return
+
+
+    scores = []
+    p_nums = []
+
+    # convert information regarding players to integer
+    for player in info:
+        player["where"] = int(player["where"])
+        player["what"] = score(player["what"])
+        scores.append(player["what"])
+        p_nums.append(player["player"])
+        # if card found worthy of replacement
+        if candidate > player["what"]:
+            candidate_found = True
+
+    player_card = min(scores)
+    # if candidate not found, find candidate through AI
+    if not candidate_found:
+        # apply minmax to find candidate
+        min_max_arr = scores + [candidate]
+        treeDepth = math.log(len(min_max_arr), 2)
+        minmax_result = minimax(0, 0, True, min_max_arr, treeDepth)
+
+        if minmax_result == candidate:
+            player_card = min(scores)
+    
+    player_selected = p_nums[scores.index(player_card)]
+    player_card_index = [player["where"] for player in info if player["player"] == player_selected][0]
+
+    satti_move = locations[player_num][hand_scores.index(candidate)]
+    satti_player_card = locations[player_selected-1][player_card_index]
+
 @app.route('/sattimethod', methods = ['POST'])
 def set_satti_data():
     jsdata = json.loads((request.form['javascript_data']))
     players = jsdata['players']
     player_num = int(jsdata['player_num'])-1
-    generate_satti_move(player_num, players)
+    info = jsdata['info']
+    print(info)
+    ai_satti_next_move(player_num, info, players)
+    # generate_satti_move(player_num, players)
     return (jsdata)
 
 @app.route('/getsattidata')
@@ -112,7 +218,7 @@ def get_satti_data():
         'move': satti_move,
         'player_card': satti_player_card
     }
-    print(f"Satti Move: {next_move['move']}\nPlayer Card:{next_move['player_card']}")
+    # print(f"Satti Move: {next_move['move']}\nPlayer Card:{next_move['player_card']}")
     return f"{next_move['move']} {next_move['player_card']}"
 
 
@@ -124,6 +230,7 @@ def get_post_javascript_data():
     avail_card = jsdata['avail_card']
 
     generate_next_move(player_num, avail_card, players)
+    # ai_next_move(player_num, avail_card, players)
     return (jsdata)
 
 @app.route('/getpythondata')
@@ -132,20 +239,6 @@ def get_python_data():
         'move': move,
         'location': location
     }
-    
     return f"{next_move['move']} {next_move['location']}"
 
 app.run(host='127.0.0.1', port=5500)
-
-
-def openNewWindow():
-     
-    window = Toplevel(GUI)
-    window.title("IQBAL BLOCK MAP")
- 
-    # sets the geometry of toplevel
-    newWindow.geometry("200x200")
- 
-    # A Label widget to show in toplevel
-    Label(newWindow,
-          text ="This is a new window").pack()
