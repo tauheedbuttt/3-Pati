@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3 Pati</title>
+    <link href="gameStyles.css" rel="stylesheet">
+</head>
+<body onload="display_cards()">
+    <div class="container">
+        <div class="player player1" id="player1">
+            <div id="0" class="hand1 first">
+            </div>
+            <div id="1" class="hand1 second">
+            </div>
+            <div id="2" class="hand1 third">
+            </div>
+        </div>
+        <div class="player player2" id="player2">
+            <div id="3" class="hand2 first">
+            </div>
+            <div id="4" class="hand2 second">
+            </div>
+            <div id="5" class="hand2 third">
+            </div>
+        </div>
+        <div class="player player3" id="player3">
+            <div id="6" class="hand3 first">
+            </div>
+            <div id="7" class="hand3 second">
+            </div>
+            <div id="8" class="hand3 third">
+            </div>
+        </div>
+        <div class="player player4" id="player4">
+            <div id="9" class="hand4 first">
+            </div>
+            <div id="10" class="hand4 second">
+            </div>
+            <div id="11" class="hand4 third">
+            </div>
+        </div>
+        <div id="dealt" class="dealt" onclick="put_on_dealt()"></div>
+        <div id="current" class="current">
+            <img src="images/play.png" alt="" class="play" onclick="start_game(this)">
+        </div>
+        <div id="deck" class="deck"></div>
+        <div id="ann" class="ann">
+            <div class="items heading">
+                <img src="images/scoreHeading.png" alt="" class="scoreHeading" onclick="go_home()">
+            </div>
+            <div class="items scores score1">
+                <button class="btn btn1" id="score1">Player 1</button>
+            </div>
+            <div class="items scores score2">
+                <button class="btn btn2" id="score2">Player 2</button>
+            </div>
+            <div class="items scores score3">
+                <button class="btn btn3" id="score3">Player 3</button>
+            </div>
+            <div class="items scores score4">
+                <button class="btn btn4" id="score4">Player 4</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

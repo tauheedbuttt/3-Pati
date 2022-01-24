@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3 Pati</title>
+    <link href="homeStyles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="item item1">
+            <img class="logo" src="images/logo.png">
+        </div>
+        <div class="item item2">
+            <div class="item item3">
+                <select class="btn btn1" id="players" name="players" >
+                    <option selected disabled hidden value="0">Select Opponents</option>
+                    <option value="1">vs 1</option>
+                    <option value="2">vs 2</option>
+                    <option value="3">vs 3</option>
+                </select>
+            </div>
+            <div class="item item4">
+                <button class="btn btn2" href="game.html" onclick="set_players()">Play Game</button>
+            </div>
+        </div>
+    </div>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="script.js"></script>
+
+</body>
+</html>
