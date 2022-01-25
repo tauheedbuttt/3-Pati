@@ -4,7 +4,7 @@ temp_lol = []
 sessionStorage.setItem("player_moves", JSON.stringify(temp_lol))
 
 
-
+// ----------------------------HELPER FUNCTIONS----------------------------
 async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -13,7 +13,64 @@ function random(min, max) {
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+// remove item from array
+function array_remove(arr, value) { 
+    var index = arr.indexOf(value);
+    if (index !== -1) {
+        arr.splice(index, 1);
+    }
+    return arr;
+}
+// Send Browser Back to Home
+function go_home(){
+    window.location.href="home.html"
+}
+// returns deck of cards
+function get_deck_of_cards(){
+    // returns array consisting deck of cards in string format
+    // [2_of_clubs, 3_of_hearts, ..., etc] total 52 hence all of them
+    categories = ["clubs","spades","hearts","diamonds"];
+    bigThree = ["queen", "jack", "king"];
+    allCards = []
+    for(i = 0 ; i<4 ; i++){
+        //get numbers of the category
+        allCards.push("ace_of_"+ categories[i])
+        for(j=2 ; j<=10 ; j++){
+            allCards.push(j + "_of_" + categories[i]);
+        }
+        //get big three of the category
+        for(j=0 ; j<3 ; j++){
+            allCards.push(bigThree[j] + "_of_" + categories[i]+"2");
+        }
+    }
+    return allCards;
+}
+function remove_from_current(card){
+    card.style.pointerEvents="none";
+    card.style.visibility="hidden";
+}
+// Calculate points of the given card
+function score(card){
+    number = card.split("_")[0];
+    if (number=="2") return 2;
+    else if (number=="3") return 3;
+    else if (number=="4") return 4;
+    else if (number=="5") return 5;
+    else if (number=="6") return 6;
+    else if (number=="7") return 7;
+    else if (number=="8") return 8;
+    else if (number=="9") return 9;
+    else if (number=="10") return 10;
+    else if (number=="jack") return 11;
+    else if (number=="queen") return 12;
+    else if (number=="king") return 13;
+    else if (number=="ace") return 1;
+    else return 0;
+}
+
+// -----------------Get Card Elements by passing their location -------------
 function card_location(card, cards){
+    // given a cards array, tels where the card lies in that array
     for(i=0 ; i<cards.length ; i++){
         if (card.id == cards[i].id)
             return i
@@ -22,12 +79,20 @@ function card_location(card, cards){
 }
 
 function card_from_board(player_num, card_num){
+    // INPUT: player number [1, 2, 3, 4], the card number [0, 1, 2]
+    // OUTPUT: returns card depending on its location provided in card number
     var cn = "cards player"+player_num+"Cards"
     var cards = document.getElementsByClassName(cn)
     return cards[card_num]
 }
 
 function card_from_board_matrix(cell_num){
+    // INPUT: Cell Num is the cells allocated to each player
+    // Player 1 has cells [0,1,2]
+    // Player 2 has cells [3,4,5]
+    // Player 3 has cells [6,7,8]
+    // Player 4 has cells [9,10,11]
+    // Output: Returns card at the particular cell
     var locations = [
         [0,1,2],
         [3,4,5],
@@ -46,11 +111,29 @@ function card_from_board_matrix(cell_num){
     }
     return null;
 }
+// returns card location in cell numbers
+function location_of(card){
+    player_num = card.className.split(" ")[1].split("Card")[0]
+    player_num = parseInt(player_num[player_num.length-1])-1
 
-function go_home(){
-    window.location.href="home.html"
+    locations = [
+        [0,1,2],
+        [3,4,5],
+        [6,7,8],
+        [9,10,11]
+    ]
+
+    cards = document.getElementsByClassName(card.className)
+    for(let c =0 ; c<cards.length ; c++){
+        if (cards[c].id == card.id){
+            return locations[player_num][c]
+        }
+    }
 }
 
+
+// ----------------------------UPDATE STORAGE----------------------------
+// Store Opponent Numbers selected at 
 function set_players(){
     const players = parseInt(document.getElementById("players").value)+1
     sessionStorage.setItem("players", players);
@@ -62,6 +145,7 @@ function set_players(){
     }
 }
 
+// update storage by taking data from gameboard
 function upd_players(){
     var total_players = parseInt(sessionStorage.getItem("players"));
     players = JSON.parse(sessionStorage.getItem("players_data"));
@@ -75,6 +159,7 @@ function upd_players(){
     sessionStorage.setItem("players_data", JSON.stringify(players));
 }
 
+// make both cards unkown in storage
 function unkown_players(card1, card2){
     var total_players = parseInt(sessionStorage.getItem("players"));
     players = JSON.parse(sessionStorage.getItem("players_data"));
@@ -87,32 +172,10 @@ function unkown_players(card1, card2){
     sessionStorage.setItem("players_data", JSON.stringify(players));
 }
 
-function get_deck_of_cards(){
-    categories = ["clubs","spades","hearts","diamonds"];
-    bigThree = ["queen", "jack", "king"];
-    allCards = []
-    for(i = 0 ; i<4 ; i++){
-        //get numbers of the category
-        allCards.push("ace_of_"+ categories[i])
-        for(j=2 ; j<=10 ; j++){
-            allCards.push(j + "_of_" + categories[i]);
-        }
-        //get big three of the category
-        for(j=0 ; j<3 ; j++){
-            allCards.push(bigThree[j] + "_of_" + categories[i]+"2");
-        }
-    }
-    return allCards;
-}
 
-function array_remove(arr, value) { 
-    var index = arr.indexOf(value);
-    if (index !== -1) {
-        arr.splice(index, 1);
-    }
-    return arr;
-}
+// ----------------------------On-Going Game----------------------------
 
+// starts the game after play btn is clicked
 function start_game(play_btn){
     // make deck clickable
     deck = document.getElementsByClassName("cards backside deck")
@@ -127,6 +190,7 @@ function start_game(play_btn){
 
 }
 
+// Deal Cards to all the players and place remaining deck of cards on the side
 function display_cards(){
     //get number of players
     var total_players = sessionStorage.getItem("players");
@@ -191,6 +255,7 @@ function display_cards(){
     sessionStorage.setItem("deck_cards", JSON.stringify(deck));
 }
 
+// Remove the top card from deck in Storage
 function pop_card_from_deck(){
     //get the deck array to update it as well
     deck = JSON.parse(sessionStorage.getItem("deck_cards"));
@@ -202,9 +267,12 @@ function pop_card_from_deck(){
     document.getElementById(card).remove();
     deck = array_remove(deck, card);
     sessionStorage.setItem("deck_cards", JSON.stringify(deck));
+
+    // return card from top of deck
     return card
 }
 
+// Remove the top card from deck on Web
 function remove_from_deck(card){
     // remove card from top
     card_id = pop_card_from_deck()
@@ -233,25 +301,8 @@ function remove_from_deck(card){
     pop_up_space.appendChild(card2);
 }
 
-function location_of(card){
-    player_num = card.className.split(" ")[1].split("Card")[0]
-    player_num = parseInt(player_num[player_num.length-1])-1
-
-    locations = [
-        [0,1,2],
-        [3,4,5],
-        [6,7,8],
-        [9,10,11]
-    ]
-
-    cards = document.getElementsByClassName(card.className)
-    for(let c =0 ; c<cards.length ; c++){
-        if (cards[c].id == card.id){
-            return locations[player_num][c]
-        }
-    }
-}
-
+//                  ------------User Moves------------
+// Specail 7 Card move for USER
 async function user_satti_move(card){
     if (sessionStorage.getItem("card_1")==null){
         sessionStorage.setItem("card_1", card.id)
@@ -328,6 +379,7 @@ async function user_satti_move(card){
     }
 }
 
+// Throw the card taken from deck
 function put_on_dealt(){
     //put revelead card at place of the one that was removed
     card = document.getElementsByClassName("cards frontside current")[0];
@@ -377,11 +429,7 @@ function put_on_dealt(){
         make_opponents_move();
 }
 
-function remove_from_current(card){
-    card.style.pointerEvents="none";
-    card.style.visibility="hidden";
-}
-
+// Throw the card taken from hand
 function remove_from_hand(card){
 
     document.getElementById("dealt").style.pointerEvents="none"
@@ -478,14 +526,9 @@ function remove_from_hand(card){
         make_opponents_move();
 }
 
-function get_next_move(){
-    $.get("http://127.0.0.1:5500/getpythondata", function(data) {
-        complete_move = data.split(" ")
-        sessionStorage.setItem("next_move", JSON.stringify(complete_move))
-        bruh = JSON.parse(sessionStorage.getItem("next_move"))
-    })
-}
+//                  ------------PC Moves------------
 
+// Send AI Current Status for Normal Move
 function send_current_status(n, p_data, av_card){
     obj = {
         players: p_data,
@@ -498,6 +541,7 @@ function send_current_status(n, p_data, av_card){
     });
 }
 
+// Send AI Current Status for Special 7 Card Move
 function send_satti_status(n, p_data){
     moves = JSON.parse(window.sessionStorage.getItem("player_moves"));
     moves_to_send = []
@@ -521,6 +565,16 @@ function send_satti_status(n, p_data){
     });
 }
 
+// Ask AI For Next Normal Move
+function get_next_move(){
+    $.get("http://127.0.0.1:5500/getpythondata", function(data) {
+        complete_move = data.split(" ")
+        sessionStorage.setItem("next_move", JSON.stringify(complete_move))
+        bruh = JSON.parse(sessionStorage.getItem("next_move"))
+    })
+}
+
+// Ask AI For next Special 7 Card Move
 function next_satti_move(){
     $.get("http://127.0.0.1:5500/getsattidata", function(data) {
         complete_move = data.split(" ")
@@ -529,6 +583,7 @@ function next_satti_move(){
     })
 }
 
+// Take  the Special 7 Card Move on Web and Storage
 async function pc_satti_move(j, players){
     send_satti_status(j,players)
     await sleep(800) //wait for it to send
@@ -588,6 +643,7 @@ async function pc_satti_move(j, players){
 
 }
 
+// Take  the Normal Move on Web and Storage
 async function make_opponents_move(){
     //get number of players
     var total_players = parseInt(sessionStorage.getItem("players"));
@@ -741,31 +797,17 @@ async function make_opponents_move(){
     deck[deck.length-1].style.pointerEvents="auto"
 }
 
-function score(card){
-    number = card.split("_")[0];
-    if (number=="2") return 2;
-    else if (number=="3") return 3;
-    else if (number=="4") return 4;
-    else if (number=="5") return 5;
-    else if (number=="6") return 6;
-    else if (number=="7") return 7;
-    else if (number=="8") return 8;
-    else if (number=="9") return 9;
-    else if (number=="10") return 10;
-    else if (number=="jack") return 11;
-    else if (number=="queen") return 12;
-    else if (number=="king") return 13;
-    else if (number=="ace") return 1;
-    else return 0;
-}
+// --------------------------Game Finished--------------------------
 
-function reveal_cards(player, winners){
+// Reveal cards of all the players
+function reveal_cards(player){
     class_name = "cards player" + player + "Cards"
     cards = document.getElementsByClassName(class_name)
     for (i=0 ; i<3 ; i++)
         cards[i].src = "images/cards/"+cards[i].id+".png";
 }
 
+// Highlight the winners' Hand
 function add_shadow_to_winners(player){
     class_name = "cards player" + player + "Cards"
     cards = document.getElementsByClassName(class_name)
@@ -774,6 +816,7 @@ function add_shadow_to_winners(player){
         cards[i].style.boxShadow = "0 0 20px 2px rgb(255, 174, 0)";
 }
 
+// Find the Winner
 async function show_winner(){
     upd_players();
     // console.log("FINAL STORAGE")
@@ -816,6 +859,7 @@ async function show_winner(){
     show_result(total_players, win_score, scores, player_names)
 }
 
+// Show the Result on Screen
 function show_result(total_players, win_score, scores, player_names){
     // hide game board
     document.getElementById("dealt").remove()
