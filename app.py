@@ -8,12 +8,16 @@ import math
 app = Flask(__name__)
 CORS(app)
 
+# ------------------------------Variables------------------------------
+# next move details form Normal Move
 move = 0
 location = 0
 
+# next move details form Special 7 Card Move
 satti_move = 0
 satti_player_card = 0
 
+# ----------------------------Helper Functions----------------------------
 # returns score according to card
 def score(card):
     if card==" ":
@@ -48,25 +52,7 @@ def score(card):
         return 1
     else:
         return 0
-
-def generate_next_move(player_num, avail_card, players):
-    global move
-    global location
-
-    hand = players[player_num]
-    hand_scores = [score(card) for card in hand]
-    avail_score = score(avail_card)
-
-    # get the card with which you wish to exhcange
-    move = hand_scores.index(max(hand_scores))
-
-    if (avail_score > max(hand_scores)):
-        # if avail card bigger than our maximum, dont bother changing
-        location = -1
-    else:
-        location = 1
-
-# -----------------------------MinMax AI Algorithm------------------------------
+# MinMax AI Algorithms
 def minimax(curDepth, nodeIndex, maxTurn, scores, targetDepth):
  
     # base case : targetDepth reached
@@ -94,7 +80,28 @@ def maxmini(curDepth, nodeIndex, maxTurn, scores, targetDepth):
         return min(maxmini(curDepth + 1, nodeIndex * 2, True, scores, targetDepth),
                    maxmini(curDepth + 1, nodeIndex * 2 + 1, True, scores, targetDepth))
 
-# -----------------------------NEXT MOVE BASED ON AI SUGGESTIOn ------------------------
+
+
+# -----------------------------Normal Moves-----------------------------
+# Without AI
+def generate_next_move(player_num, avail_card, players):
+    global move
+    global location
+
+    hand = players[player_num]
+    hand_scores = [score(card) for card in hand]
+    avail_score = score(avail_card)
+
+    # get the card with which you wish to exhcange
+    move = hand_scores.index(max(hand_scores))
+
+    if (avail_score > max(hand_scores)):
+        # if avail card bigger than our maximum, dont bother changing
+        location = -1
+    else:
+        location = 1
+
+# With AI
 def ai_next_move(player_num, avail_card, players):
     global move
     global location
@@ -122,6 +129,9 @@ def ai_next_move(player_num, avail_card, players):
         location = 1
 
 
+# -------------------------Special 7 Card Move-------------------------
+
+# Without AI
 def generate_satti_move(player_num, players):
     global satti_move
     global satti_player_card
@@ -144,7 +154,7 @@ def generate_satti_move(player_num, players):
     satti_player_card = locations[satti_player][random.choice([0,1,2])]
 
 
-# ----------------------------GET SATTI MOVE FROM AI -------------------------------
+# With AI
 def ai_satti_next_move(player_num, info, players):
     global satti_move
     global satti_player_card
@@ -201,27 +211,11 @@ def ai_satti_next_move(player_num, info, players):
     satti_move = locations[player_num][hand_scores.index(candidate)]
     satti_player_card = locations[player_selected-1][player_card_index]
 
-@app.route('/sattimethod', methods = ['POST'])
-def set_satti_data():
-    jsdata = json.loads((request.form['javascript_data']))
-    players = jsdata['players']
-    player_num = int(jsdata['player_num'])-1
-    info = jsdata['info']
-    print(info)
-    ai_satti_next_move(player_num, info, players)
-    # generate_satti_move(player_num, players)
-    return (jsdata)
 
-@app.route('/getsattidata')
-def get_satti_data():
-    next_move = {
-        'move': satti_move,
-        'player_card': satti_player_card
-    }
-    # print(f"Satti Move: {next_move['move']}\nPlayer Card:{next_move['player_card']}")
-    return f"{next_move['move']} {next_move['player_card']}"
+# ------------------------Flask Server Methods------------------------
 
-
+#           ----------------Normal Moves----------------
+# Get Data from JS
 @app.route('/postmethod', methods = ['POST'])
 def get_post_javascript_data():
     jsdata = json.loads((request.form['javascript_data']))
@@ -233,6 +227,8 @@ def get_post_javascript_data():
     # ai_next_move(player_num, avail_card, players)
     return (jsdata)
 
+
+# Return Data To JS
 @app.route('/getpythondata')
 def get_python_data():
     next_move = {
@@ -241,4 +237,31 @@ def get_python_data():
     }
     return f"{next_move['move']} {next_move['location']}"
 
+
+#           -------------Special 7 Card Move-------------
+# Get Data from JS
+@app.route('/sattimethod', methods = ['POST'])
+def set_satti_data():
+    jsdata = json.loads((request.form['javascript_data']))
+    players = jsdata['players']
+    player_num = int(jsdata['player_num'])-1
+    info = jsdata['info']
+    print(info)
+    ai_satti_next_move(player_num, info, players)
+    # generate_satti_move(player_num, players)
+    return (jsdata)
+
+
+# Return Data To JS
+@app.route('/getsattidata')
+def get_satti_data():
+    next_move = {
+        'move': satti_move,
+        'player_card': satti_player_card
+    }
+    # print(f"Satti Move: {next_move['move']}\nPlayer Card:{next_move['player_card']}")
+    return f"{next_move['move']} {next_move['player_card']}"
+
+
+# Run The Flask Server
 app.run(host='127.0.0.1', port=5500)
