@@ -1,6 +1,6 @@
 # 3 Pati
 
-A simple to understand card playing game. Each player gets dealt 
+A simple to understand card playing game. Each player gets dealt 3 cards and they move them around the table according to their needs. At the end the cards are revealed and the player with the least amount of score wins.
 
 ## Libraries
 Run these commands in command prompt. Access command prompt by pressing start on keyboard. Then type in search "cmd". Command prompt shows up and just click it. If these commands dont successfuly install the libraries, try launching command prompt with administartive rights. 
