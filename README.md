@@ -32,5 +32,11 @@ Run these commands in command prompt. Access command prompt by pressing start on
         Queen -> 12
         King  -> 13
 
+## Start the app
+Use this website to play the game on web
+                https://teen-pati.herokuapp.com/
+
 ## Installation Steps
+Use this method to play game on pc
+
 First install the mentioned libraries to your python environment. After that run the script in app.py. This will start the Flask server which will allow the data transfer between Web Application and AI implementation in Python. Then open "home.html" on any browser and play the game. 
