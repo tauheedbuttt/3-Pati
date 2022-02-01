@@ -47,9 +47,13 @@ select {
     
     box-shadow: 10px 10px;
 }
+.btn1{
+    padding-left: 10px;;
+    padding-right: 10px;;
+}
 .btn2{
-    padding-left: 160px ;
-    padding-right: 160px ;
+    padding-left: 80px ;
+    padding-right: 80px ;
 }
 
 .btn:hover{
